@@ -1,0 +1,10 @@
+---
+applications:
+- name: apptri
+  instances: 1
+  memory: 100M
+  disk_quota: 600M
+  buildpacks: 
+    - nodejs_buildpack
+  routes:
+    - route: apptri.apps.eu1.mindsphere.io
