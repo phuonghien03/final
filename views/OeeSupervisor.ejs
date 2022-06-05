@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Collapsible sidebar using Bootstrap 4</title>
+
+  <!-- Bootstrap -->
+  <link href="/stylesheets/bootstrap-4.2.1.css" rel="stylesheet">
+  <!-- Our Custom CSS -->
+  <link rel="stylesheet" href="/stylesheets/style.css">
+
+  <!-- Font Awesome JS -->
+  <script defer src="/javascripts/solid.js"></script>
+  <script defer src="/javascripts/fontawesome.js"></script>
+
+
+</head>
+
+<body>
+  <div class="wrapper">
+    <!-- Sidebar  -->
+    <nav id="sidebar">
+      <!--
+    <div class="sidebar-header">
+      <h3 style="width: 100%"><span style="font-size: 40px; font-family: Arial">Mindsphere Motor</span> <span style="font-size: 20px; font-family: Arial; color: rgb(224,74,105); padding-left: 5px; ">Demo</span></h3>
+    </div>
+-->
+      <ul class="list-unstyled components">
+        <img id="logocompany" src="/images/Myimages/logo-estec.svg" alt="" />
+        <li> <a href="/">Dash Board</a> </li>
+        <li> <a href="#" style="color: rgb(224,74,105)">OEE Supervisor</a> </li>
+        <li> <a href="/DataAnalytics" >Data Analytics</a> </li>
+        <li> <a href="/AlarmCenter">Alarm Center</a> </li>
+        <li> <a href="/AugmentedReality">Augmented Reality</a> </li>
+      </ul>
+    </nav>
+    <!-- Page Content  -->
+    <div id="content">
+      <nav class="navbar navbar-expand-lg navbar-light ">
+        <div class="container-fluid">
+          <button type="button" id="sidebarCollapse" class="btn btn-info"> <i class="fas fa-align-left"></i>
+            <!--			<span>Toggle Sidebar</span> -->
+          </button>
+          <div style="font-family: Arial; font-size: 30px; margin-left: 80px"> <span
+              style="color: rgb(224,74,105)">P</span><span style="color: rgb(255,255,255)">erformance</span> <span
+              style="color: rgb(224,74,105)">M</span><span style="color: rgb(255,255,255)">anagement</span> <span
+              style="color: rgb(224,74,105)">S</span><span style="color: rgb(255,255,255)">ystem</span> </div>
+          <button class="btn btn-dark d-inline-block d-lg-none ml-auto" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+            aria-label="Toggle navigation"> <i class="fas fa-align-justify"></i> </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="nav navbar-nav ml-auto">
+              <li class="nav-item active"> <a class="nav-link" href="#">Motor 1</a> </li>
+              <li class="nav-item"> <a class="nav-link" href="#">Motor 2</a> </li>
+              <li class="nav-item"> <a class="nav-link" href="#">Motor 3</a> </li>
+              <li class="nav-item"> <a class="nav-link" href="#">Motor 4</a> </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="row">
+              <div class="col-lg-3">
+                <div class="card-dasboard mb-3">
+                  <div class="card-header">OEE </div>
+                  <div class="card-body">
+                    <div id="chartOee" style="margin: auto; max-width: 230px"> </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-3">
+                <div class="card-dasboard mb-3">
+                  <div class="card-header">Availability </div>
+                  <div class="card-body">
+                    <div id="chartAvailability" style="margin: auto; max-width: 230px"> </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-3">
+                <div class="card-dasboard mb-3">
+                  <div class="card-header">Performance </div>
+                  <div class="card-body">
+                    <div id="chartPerformance" style="margin: auto; max-width: 230px"> </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-3">
+                <div class="card-dasboard mb-3">
+                  <div class="card-header">Quality </div>
+                  <div class="card-body">
+                    <div id="chartQuality" style="margin: auto; max-width: 230px"> </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="card-dasboard mb-3">
+              <div class="card-header">
+                <div class="row" style="position: relative">
+                  <div style="padding-left: 15px">OEE History</div>
+                  <div style="position: absolute; right: 20px">
+                    <div class="dropdown dropleft"> <a class="btn btn-primary" id="dropdownMenuLink"
+                        data-toggle="dropdown"> <i class="fas fa-angle-down"></i> </a>
+                      <div class="dropdown-menu" aria-labelledby="dropdownMenuLink"
+                        style="font-family: Arial;background:white ;color:rgb(0,105,217)"> <a class="btn dropdown-item" id="7days">
+                          Latest 7 days </a> <a class="btn dropdown-item" id="15days">Latest 15 days</a> <a class="btn dropdown-item" id="30days">Latest 30 days</a></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <canvas id="oeeHistoryChart" style="max-width: 100%"></canvas>
+              </div>
+            </div>
+          </div>
+          <!--
+          <div class="col-lg-6">
+            <div class="card-dasboard mb-3">
+              <div class="card-header">Power</div>
+              <div class="card-body">
+                <canvas id="powerChart"></canvas>
+              </div>
+            </div>
+          </div>
+  -->
+          <!--
+          <div class="col-lg-4">
+            <div class="card-dasboard mb-3">
+              <div class="card-header">Total Time</div>
+              <div class="card-body">
+                <div id="chartdiv"></div>
+              </div>
+            </div>
+          </div>
+  -->
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+  <script src="/javascripts/jquery-3.3.1.min.js"></script>
+  <!-- Include all compiled plugins (below), or include individual files as needed -->
+  <script src="/javascripts/popper.min.js"></script>
+  <script src="/javascripts/bootstrap-4.2.1.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      $('#sidebarCollapse').on('click', function () {
+        $('#sidebar').toggleClass('active');
+      });
+    });
+  </script>
+  <!-- SocketIO -->
+	<script src="/socket.io/socket.io.js"></script>
+  <!-- Gauge-OEE -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script defer src="/javascripts/Myjavascripts/data-oee-gauge.js"></script>
+  <script defer src="/javascripts/Myjavascripts/data-availability-gauge.js"></script>
+  <script defer src="/javascripts/Myjavascripts/data-performance-gauge.js"></script>
+  <script defer src="/javascripts/Myjavascripts/data-quality-gauge.js"></script>
+  <!-- Temperature-Chart -->
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/min/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.0"> </script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@1.8.0"></script>
+  <script src="/javascripts/Myjavascripts/OeeSupervisor.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Performace Management System</title>
+  <!-- SocketIO -->
+  <script src="socket.io/socket.io.js"></script>
+  <!-- Bootstrap -->
+  <link href="/stylesheets/bootstrap-4.2.1.css" rel="stylesheet">
+  <!-- Our Custom CSS -->
+  <link rel="stylesheet" href="/stylesheets/style.css">
+  <!-- Font Awesome JS -->
+  <script defer src="/javascripts/solid.js"></script>
+  <script defer src="/javascripts/fontawesome.js"></script>
+
+
+</head>
+
+<body>
+  <div class="wrapper">
+    <!-- Sidebar  -->
+    <nav id="sidebar">
+      <!--
+    <div class="sidebar-header">
+      <h3 style="width: 100%"><span style="font-size: 40px; font-family: Arial">Mindsphere Motor</span> <span style="font-size: 20px; font-family: Arial; color: rgb(224,74,105); padding-left: 5px; ">Demo</span></h3>
+    </div>
+-->
+      <ul class="list-unstyled components">
+        <img id="logocompany" src="/images/Myimages/logo-estec.svg" alt="" />
+        <li> <a href="/">Dash Board</a> </li>
+        <li> <a href="/OeeSupervisor">OEE Supervisor</a> </li>
+        <li> <a href="/DataAnalytics">Data Analytics</a> </li>
+        <li> <a href="#" style="color: rgb(224,74,105)">Alarm Center</a> </li>
+        <li> <a href="/AugmentedReality">Augmented Reality</a> </li>
+      </ul>
+    </nav>
+    <!-- Page Content  -->
+    <div id="content">
+      <nav class="navbar navbar-expand-lg navbar-light ">
+        <div class="container-fluid">
+          <button type="button" id="sidebarCollapse" class="btn btn-info"> <i class="fas fa-align-left"></i>
+            <!--			<span>Toggle Sidebar</span> -->
+          </button>
+          <div style="font-family: Arial; font-size: 30px; margin-left: 80px"> <span
+              style="color: rgb(224,74,105)">P</span><span style="color: rgb(255,255,255)">erformance</span> <span
+              style="color: rgb(224,74,105)">M</span><span style="color: rgb(255,255,255)">anagement</span> <span
+              style="color: rgb(224,74,105)">S</span><span style="color: rgb(255,255,255)">ystem</span> </div>
+          <!-- <button class="btn btn-dark d-inline-block d-lg-none ml-auto" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+            aria-label="Toggle navigation"> <i class="fas fa-align-justify"></i> </button> -->
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <!--
+          <ul class="nav navbar-nav ml-auto">
+            <li class="nav-item active"> <a class="nav-link" href="#">Motor 1</a> </li>
+            <li class="nav-item"> <a class="nav-link" href="#">Motor 2</a> </li>
+            <li class="nav-item"> <a class="nav-link" href="#">Motor 3</a> </li>
+            <li class="nav-item"> <a class="nav-link" href="#">Motor 4</a> </li>
+          </ul>
+-->
+            <!-- <button type="button" class="btn btn-danger" id="testAlarm"
+              style="position: absolute; right: 35px; bottom : 25px">Test
+              Alarm</button> -->
+          </div>
+        </div>
+      </nav>
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="card-dasboard mb-3">
+              <div class="card-header">Email User Box</div>
+              <div class="card-body">
+                <form>
+                  
+                    <label for="exampleInputEmail1">Personal Email</label>
+                    <input type="tel" class="form-control" id="Email1" placeholder="example@gmail.com" value="">
+                  
+                    <label for="exampleInputPassword1">Office Email</label>
+                    <input type="tel" class="form-control" id="Email2" placeholder="example@gmail.com" value="">
+                  
+                  
+                    <label for="exampleInputPassword1">Other Email</label>
+                    <input type="tel" class="form-control" id="Email3" placeholder="example@gmail.com" value="">
+                  
+                  <button type="button" class="btn btn-primary float-right" id="submitEmail"
+                    style="position: absolute; right: 35px; bottom : 25px">Submit</button>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="card-dasboard mb-3">
+              <div class="card-header">Sms User Box</div>
+              <div class="card-body">
+                <form>
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Personal Phone</label>
+                    <input type="tel" class="form-control" id="Phone1" placeholder="+84-00-000-0000" value="">
+                    <label for="exampleInputEmail1">Office Phone</label>
+                    <input type="tel" class="form-control" id="Phone2" placeholder="+84-00-000-0000" value="">
+                    <label for="exampleInputEmail1">Other Phone</label>
+                    <input type="tel" class="form-control" id="Phone3" placeholder="+84-00-000-0000" value="">
+                  </div>
+                  <button type="button" class="btn btn-primary float-right" id="submitSms"
+                    style="position: absolute; right: 35px; bottom : 25px">Submit</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="card-dasboard mb-3">
+              <div class="row" style=" padding-left: 15px;padding-right: 15px">
+                <div class="card-header" style=" width: 100%;">Alarm History
+                  <button type="submit" class="btn btn-success float-right"
+                    onclick="window.location.href = '/alarm/report/:mode';">Excel</button>
+                  <input class="float-right" type="text" name="datefilter"
+                    style="border-radius: 5px;text-align: center; font-size:18px; font-family: Arial, Helvetica, sans-serif; "
+                    value="" />
+                  <!-- position: absolute;top:25px; right: 120px; -->
+
+                </div>
+                <!-- style="position: absolute; top:24px; right: 35px" -->
+              </div>
+              <div class="card-body">
+                <div class="table-wrapper-scroll-y my-custom-scrollbar">
+                  <table class="table table-bordered table-striped mb-0" id="placar">
+                    <thead>
+                      <tr>
+                        <th scope="col" style="width: 50px;">No.</th>
+                        <th scope="col" style="width: 300px;">Time</th>
+                        <th scope="col" style="width: 300px;">Event</th>
+                        <th scope="col" style="width: 200px;">Value</th>
+                        <th scope="col" style="width: 50px;">Unit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                          <td> 1 </td>
+                          <td> 12/02/2018
+                            <div class="td__description"></div>
+                          </td>
+                          <td><a> High</a></td>
+                          <td><a> 100 </a></td>
+                          <td><a> V </a></td>
+                        </tr>
+                        <tr>
+                          <td> 2 </td>
+                          <td> 12/02/2018
+                            <div class="td__description"></div>
+                          </td>
+                          <td><a> High</a></td>
+                          <td><a> 100 </a></td>
+                          <td><a> V </a></td>
+                        </tr>
+                        <tr>
+                          <td> 3 </td>
+                          <td> 12/02/2018
+                            <div class="td__description"></div>
+                          </td>
+                          <td><a> High</a></td>
+                          <td><a> 100 </a></td>
+                          <td><a> V </a></td>
+                        </tr>
+                        <tr>
+                          <td> 4 </td>
+                          <td> 12/02/2018
+                            <div class="td__description"></div>
+                          </td>
+                          <td><a> High</a></td>
+                          <td><a> 100 </a></td>
+                          <td><a> V </a></td>
+                        </tr>
+                        <tr>
+                          <td> 4 </td>
+                          <td> 12/02/2018
+                            <div class="td__description"></div>
+                          </td>
+                          <td><a> High</a></td>
+                          <td><a> 100 </a></td>
+                          <td><a> V </a></td>
+                        </tr>
+                        <tr>
+                          <td> 4 </td>
+                          <td> 12/02/2018
+                            <div class="td__description"></div>
+                          </td>
+                          <td><a> High</a></td>
+                          <td><a> 100 </a></td>
+                          <td><a> V </a></td>
+                        </tr>
+                        <tr>
+                          <td> 4 </td>
+                          <td> 12/02/2018
+                            <div class="td__description"></div>
+                          </td>
+                          <td><a> High</a></td>
+                          <td><a> 100 </a></td>
+                          <td><a> V </a></td>
+                        </tr>
+                        <tr>
+                          <td> 4 </td>
+                          <td> 12/02/2018
+                            <div class="td__description"></div>
+                          </td>
+                          <td><a> High</a></td>
+                          <td><a> 100 </a></td>
+                          <td><a> V </a></td>
+                        </tr>
+                        <tr>
+                          <td> 4 </td>
+                          <td> 12/02/2018
+                            <div class="td__description"></div>
+                          </td>
+                          <td><a> High</a></td>
+                          <td><a> 100 </a></td>
+                          <td><a> V </a></td>
+                        </tr>
+                        <tr>
+                          <td> 4 </td>
+                          <td> 12/02/2018
+                            <div class="td__description"></div>
+                          </td>
+                          <td><a> High</a></td>
+                          <td><a> 100 </a></td>
+                          <td><a> V </a></td>
+                        </tr>
+                        <tr>
+                          <td> 4 </td>
+                          <td> 12/02/2018
+                            <div class="td__description"></div>
+                          </td>
+                          <td><a> High</a></td>
+                          <td><a> 100 </a></td>
+                          <td><a> V </a></td>
+                        </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+  <script src="/javascripts/jquery-3.3.1.min.js"></script>
+  <!-- Include all compiled plugins (below), or include individual files as needed -->
+  <script src="/javascripts/popper.min.js"></script>
+  <script src="/javascripts/bootstrap-4.2.1.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      $('#sidebarCollapse').on('click', function () {
+        $('#sidebar').toggleClass('active');
+      });
+    });
+  </script>
+
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
+  <script type="text/javascript">
+
+  </script>
+  <link rel="stylesheet" href="/stylesheets/Mystylesheets/alarm-emailuser.css">
+  <!-- JSON2HTML -->
+  <!-- SocketIO -->
+  <script src="socket.io/socket.io.js"></script>
+
+  <script src="/javascripts/json2html.min.js"></script>
+  <script src="/javascripts/Myjavascripts/AlarmCenter.js"></script>
+</body>
+
+</html>

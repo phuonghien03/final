@@ -1,0 +1,627 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('nodejs-server:server');
+var http = require('http');
+
+
+/**
+ * Get library from java.
+ */
+var async = require('async');
+var events = require('events');
+var emitter = new events.EventEmitter();
+var mqtt = require('mqtt');
+var JSONStream = require('JSONStream');
+var mongoose = require('mongoose');
+var fs = require('fs');
+var moment = require('moment');
+/**
+ * Get library from folder.
+ */
+var mindsphere = require('../model/MindSphere');
+var dashboard = require('../model/dashboardData');
+var alarmCenterData = require('../model/alarmCenterData');
+/**
+ * Declare variant.
+ */
+var clientID = 'estec-apptri-1.0.0'
+var clientCredential = 'rgyeNeKCgy2TEqPckPHxB82PwindVlF7PE3dK5fqNlj';
+var bodyObject = {
+  "appName": "apptri",
+  "appVersion": "1.0.0",
+  "hostTenant": "estec",
+  "userTenant": "estec"
+}
+var bodyRecipientSMS = {
+  recipientname: "MotorDemoApp",
+  "recipientdetail": [{
+    "address": "+84702748886",
+    "addresstypeid": 4
+  },
+  {
+    "address": "+84397699039",
+    "addresstypeid": 5
+  }]
+}
+var bodyTemplate = {
+  "templateParam": [
+    {
+      "paramName": "MailToUnsubscribe",
+      "defaultValue": "tri.tran@biendongco.vn",
+      "placeHolderName": "mailToUnsubscribe",
+      "paramTypeId": 4
+    }
+  ],
+  "templatesetName": "Template For MotorDemo App",
+  "templateChannelAndFile": [
+    {
+      "communicationChannel": 1,
+      "fileName": "EMAIL.html",
+      "operation": "ADD"
+    },
+    {
+      "communicationChannel": 2,
+      "fileName": "SMS.html",
+      "operation": "ADD"
+    }
+  ]
+}
+var emailTemplate = fs.createReadStream('./model/EMAIL.html');
+var smsTemplate = fs.createReadStream('./model/SMS.html');
+/**
+ * Get port from environment and store in Express.
+ */
+// mongoose.connect('mongodb+srv://tri:Trikaka1994@cluster0-9a4uu.mongodb.net/test?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false }, function (err, data) {
+//   dashboard.checkDataBaseDashboard()
+// });
+// mongoose.connect('mongodb://localhost:27017/mydb', { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false }, function (err, data) {
+//   dashboard.checkDataBaseDashboard()
+// });
+var client = mqtt.connect('https://test.mosquitto.org:1883'); // Mqtt broker url
+var port = normalizePort(process.env.PORT || '80'); // Port local
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+var io = require('socket.io')(server);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
+
+var $assetToken;
+var assetName = 'Motorlogger';
+//------------------------ GET ASSET TOKEN & ASSET ID -----------------------------------------
+async.series([
+  function (callback) {
+    mindsphere.getToken(clientID, clientCredential, bodyObject, function (assetToken) {
+      if (assetToken) {
+        $assetToken = assetToken;
+        console.log("Token : ", $assetToken);
+        callback();
+      }
+    });
+  },
+
+  function (callback) {
+    mindsphere.createNotificationEmailSmS($assetToken, bodyRecipientSMS, bodyTemplate, emailTemplate, smsTemplate, function (data) {
+      callback();
+    });
+  }
+
+], function (err, result) {
+  if (err) console.log(err);
+});
+// Get Token each 20 min
+var renewTokenInterval = 20; // set time get token
+setInterval(function () {
+  async.series([
+    function (callback) {
+      mindsphere.getToken(clientID, clientCredential, bodyObject, function (assetToken) {
+        if (assetToken) {
+          $assetToken = assetToken;
+          //console.log("Token : ", $assetToken);
+          callback();
+        }
+      });
+    }
+  ], function (err, result) {
+    if (err) console.log(err);
+  });
+}, renewTokenInterval * 60 * 1000);
+
+
+
+var dataDashboard = {
+  Speed:{
+    Setpoint : true,
+    Enable : true
+  },
+  Current:{
+    Setpoint : true,
+    Alarm : true,
+  },
+  Voltage:{
+    Setpoint: true,
+    Alarm : true
+  },
+  Temperature:{
+    Setpoint : true,
+    Alarm : true
+  }
+};
+
+var recipientValueEmail;
+var recipientValueSms;
+var Starttime;
+var hourStarttime;
+var minuteStarttime;
+var Stoptime;
+var hourStoptime;
+var minuteStoptime;
+var scheduleValue;
+//------------------------ SOCKET-IO -----------------------------------------
+io.sockets.on('connection', function (socket) {
+  socket.on('/reqDashboard', function (data, type) {
+    switch (type) {
+      case 'loadPageDashBoard': {
+        if (dataDashboard == undefined) {
+          dashboard.dashboardData.find({}, function (err, docs) {
+            if (!err) {
+              dataDashboard = docs[0];
+              io.emit('/resDashboard', dataDashboard, 'loadPageDashBoard');
+              client.publish('tritranhuuminhControl', JSON.stringify({ 'type': 'status' }));
+            }
+            else {
+              throw err;
+            }
+          });
+        }
+        else {
+          io.emit('/resDashboard', dataDashboard, 'loadPageDashBoard');
+          client.publish('tritranhuuminhControl', JSON.stringify({ 'type': 'status' }));
+          client.publish('tritranhuuminhControl', JSON.stringify({ 'type': 'status_Led' }));
+        }
+        io.emit('/resDashboard', moment(), 'clock');
+        break;
+      };
+      case 'motorStart': {
+        client.publish('tritranhuuminhControl_Speed', "true");
+        break;
+      };
+      case 'motorStop': {
+        client.publish('tritranhuuminhControl_Speed', "false");
+        break;
+      }
+      // case 'control_Led': {
+      //   client.publish('tritranhuuminhControl_Setpoint', JSON.stringify(data));
+      //   break;
+      // }
+      case 'motorSetpoint': {
+        client.publish('tritranhuuminhControl_Setpoint', data.value);
+        let update = { $set: { 'Speed.Setpoint': data.value } }
+        dataDashboard.Speed.Setpoint = data.value;
+        dashboard.updateValueData(update);
+        break;
+      }
+      case 'motorEnableControl': {
+        let update = { $set: { 'Speed.Enable': data.value } }
+        dashboard.updateValueData(update);
+        dataDashboard.Speed.Enable = data.value;
+        break;
+      }
+
+
+      case 'currentSetpointAlarm': {
+        let update = { $set: { 'Current.Setpoint': data.value } }
+        dashboard.updateValueData(update);
+        dataDashboard.Current.Setpoint = data.value;
+        break;
+      }
+      case 'currentEnableAlarm': {
+        let update = { $set: { 'Current.Alarm': data.value } }
+        dashboard.updateValueData(update);
+        dataDashboard.Current.Alarm = data.value;
+        break;
+      }
+
+
+      case 'voltageSetpointAlarm': {
+        let update = { $set: { 'Voltage.Setpoint': data.value } }
+        dashboard.updateValueData(update);
+        dataDashboard.Voltage.Setpoint = data.value;
+        break;
+      }
+      case 'voltageEnableAlarm': {
+        let update = { $set: { 'Voltage.Alarm': data.value } }
+        dashboard.updateValueData(update);
+        dataDashboard.Voltage.Alarm = data.value;
+        break;
+      }
+
+
+      case 'vibrationSetpointAlarm': {
+        let update = { $set: { 'Vibration.Setpoint': data.value } }
+        dashboard.updateValueData(update);
+        dataDashboard.Vibration.Setpoint = data.value;
+        break;
+      }
+      case 'vibrationEnableAlarm': {
+        let update = { $set: { 'Vibration.Alarm': data.value } }
+        dashboard.updateValueData(update);
+        dataDashboard.Vibration.Alarm = data.value;
+        break;
+      }
+
+
+      case 'temperatureSetpointAlarm': {
+        let update = { $set: { 'Temperature.Setpoint': data.value } }
+        dashboard.updateValueData(update);
+        dataDashboard.Temperature.Setpoint = data.value;
+        break;
+      }
+      case 'temperatureEnableAlarm': {
+        let update = { $set: { 'Temperature.Alarm': data.value } }
+        dashboard.updateValueData(update);
+        dataDashboard.Temperature.Alarm = data.value;
+        break;
+      }
+
+
+      case 'timeSchedule': {
+        let update =
+        {
+          'Time_Schedule.Starttime': data.startTime,
+          'Time_Schedule.Stoptime': data.stopTime,
+          'Time_Schedule.Mon': data.mon,
+          'Time_Schedule.Tue': data.tue,
+          'Time_Schedule.Wed': data.wed,
+          'Time_Schedule.Thu': data.thu,
+          'Time_Schedule.Fri': data.fri,
+          'Time_Schedule.Sat': data.sat,
+          'Time_Schedule.Sun': data.sun,
+        }
+
+        dashboard.updateValueData(update);
+        dataDashboard.Time_Schedule.Starttime = data.startTime,
+          dataDashboard.Time_Schedule.Stoptime = data.stopTime,
+          dataDashboard.Time_Schedule.Mon = data.mon;
+        dataDashboard.Time_Schedule.Tue = data.tue;
+        dataDashboard.Time_Schedule.Wed = data.wed;
+        dataDashboard.Time_Schedule.Thu = data.thu;
+        dataDashboard.Time_Schedule.Fri = data.fri;
+        dataDashboard.Time_Schedule.Sat = data.sat;
+        dataDashboard.Time_Schedule.Sun = data.sun;
+
+        var dayofWeek = moment().day();
+        Starttime = dataDashboard.Time_Schedule.Starttime
+        hourStarttime = parseInt(Starttime.substring(0, 2)) - 7;
+        if (hourStarttime < 0)
+          hourStarttime = hourStarttime + 24;
+        minuteStarttime = parseInt(Starttime.substring(3, 5));
+        Stoptime = dataDashboard.Time_Schedule.Stoptime
+        hourStoptime = parseInt(Stoptime.substring(0, 2)) - 7;
+        if (hourStoptime < 0)
+          hourStoptime = hourStoptime + 24;
+        minuteStoptime = parseInt(Stoptime.substring(3, 5));
+        scheduleValue.cancel();
+        scheduleValue = schedule.scheduleJob({ hour: hourStarttime, minute: minuteStarttime }, function () {
+          if (dataDashboard.Time_Schedule.Enable == true) {
+            var arrarySchedule = [dataDashboard.Time_Schedule.Sun,
+            dataDashboard.Time_Schedule.Mon,
+            dataDashboard.Time_Schedule.Tue,
+            dataDashboard.Time_Schedule.Wed,
+            dataDashboard.Time_Schedule.Thu,
+            dataDashboard.Time_Schedule.Fri,
+            dataDashboard.Time_Schedule.Sat]
+            if (arrarySchedule[dayofWeek] == true) {
+              client.publish('tritranhuuminhControl', JSON.stringify({ 'type': 'control', value: 'true' }));
+            }
+          }
+        });
+        scheduleValue = schedule.scheduleJob({ hour: hourStoptime, minute: minuteStoptime }, function () {
+          if (dataDashboard.Time_Schedule.Enable == true) {
+            var dayofWeek = moment().day();
+            var arrarySchedule = [dataDashboard.Time_Schedule.Sun,
+            dataDashboard.Time_Schedule.Mon,
+            dataDashboard.Time_Schedule.Tue,
+            dataDashboard.Time_Schedule.Wed,
+            dataDashboard.Time_Schedule.Thu,
+            dataDashboard.Time_Schedule.Fri,
+            dataDashboard.Time_Schedule.Sat]
+            if (arrarySchedule[dayofWeek] == true) {
+              client.publish('tritranhuuminhControl', JSON.stringify({ 'type': 'control', value: 'false' }));
+            }
+          }
+        });
+        break;
+      }
+      case 'timeScheduleEnable': {
+        let update = { $set: { 'Time_Schedule.Enable': data.value } }
+        dashboard.updateValueData(update);
+        dataDashboard.Time_Schedule.Enable = data.value;
+        break;
+      }
+    }
+  });
+
+
+  socket.on('/reqAlarmCenter', function (data, type) {
+    switch (type) {
+      case 'loadPageAlarmCenter': {
+        alarmCenterData.alarmCenterData.find({
+          time_series
+            :
+            { $gte: data.start, $lte: data.stop }
+        }, function (err, data) {
+          alarmCenterData.excelreport(data);
+          io.emit('/resAlarmCenter', data, 'loadPageAlarmCenter');
+          if (recipientValueEmail != undefined) {
+            socket.emit('/resAlarmCenter', recipientValueEmail, 'loadPageRecipientEmail');
+          }
+          if (recipientValueSms != undefined) {
+            socket.emit('/resAlarmCenter', recipientValueSms, 'loadPageRecipientSms');
+          }
+        });
+        break;
+      }
+      case 'updateRecipientEmail': {
+        recipientValueEmail = data;
+        mindsphere.updateRecipient($assetToken, data, function (data) {
+        });
+        break;
+      }
+      case 'updateRecipientSms': {
+        recipientValueSms = data;
+        mindsphere.updateRecipient($assetToken, data, function (data) {
+        });
+        break;
+      }
+      case 'testAlarm': {
+        if (data.value == true) {
+          //mindsphere.triggerNotification($assetToken);
+        }
+        break;
+      }
+      case 'datePicker': {
+        console.log(data)
+        alarmCenterData.alarmCenterData.find({
+          time_series
+            :
+            { $gte: data.start, $lte: data.stop }
+        }, function (err, data) {
+          alarmCenterData.excelreport(data);
+          io.emit('/resAlarmCenter', data, 'loadPageAlarmCenter');
+        });
+        break;
+      }
+    }
+  });
+
+  socket.on('/reqOeeSupervisor', function (data, type) {
+    switch (type) {
+      case 'loadPageOeeSupervisor': {
+        socket.emit('/resOeeSupervisor', valueOEE, 'loadPageOeeSupervisor');
+        break;
+      }
+    }
+  });
+  socket.on('/reqDataAnalytics', function (data, type) {
+    switch (type) {
+      case 'loadPageDataAnalytics': {
+        socket.emit('/resDataAnalytics', timeRunFault, 'loadPageDataAnalytics');
+        break;
+      }
+    }
+  });
+})
+
+// ------------------------ MQTT -----------------------------------------
+client.on('connect', function () {
+  client.subscribe('tritranhuuminhData');
+  client.subscribe('tritranhuuminhControl_Speed');
+  client.subscribe('tritranhuuminhControl_Setpoint');
+});
+var timeoutVoltage = true;
+var timeoutCurrent = true;
+var timeoutTemperature = true;
+var timeoutVibration = true;
+var valueOEE = {};
+var timeRunFault = {};
+client.on('message', function (topic, message) {
+  let data = JSON.parse(message.toString())
+  if (topic == 'tritranhuuminhData') {
+    valueOEE.OEE = data.Motor_OEE;
+    valueOEE.Performance = data.Motor_Performance;
+    valueOEE.Quality = data.Motor_Quality;
+    valueOEE.Availability = data.Motor_Availability;
+
+    timeRunFault.Runtime = parseFloat(data.Motor_Runtime / 3600).toFixed(2);
+    timeRunFault.Faulttime = parseFloat(data.Motor_Faulttime / 3600).toFixed(2);
+
+    io.emit('/resDashboard', data, 'gaugeSpeed');
+    io.emit('/resDataAnalytics', timeRunFault, 'updateTime');
+    var timeNow = new Date();
+    timeNow = timeNow.toISOString()
+    if (dataDashboard != undefined) {
+      if (data.Motor_Voltage > dataDashboard.Voltage.Setpoint) {
+        if (timeoutVoltage == true && dataDashboard.Voltage.Alarm == true) {
+          alarmCenterData.eventValueData("High Voltage", data.Motor_Voltage, timeNow, "V")
+          timeoutVoltage = false;
+          mindsphere.triggerNotification($assetToken, "High Voltage", parseFloat(data.Motor_Voltage).toFixed(2).toString(), moment(timeNow).utcOffset(7).format("DD/MM/YYYY HH:mm:ss A"), "V");
+          setTimeout(() => timeoutVoltage = true, 60000);
+        }
+      }
+      if (data.Motor_Current > dataDashboard.Current.Setpoint) {
+        if (timeoutCurrent == true && dataDashboard.Current.Alarm == true) {
+          alarmCenterData.eventValueData("High Current", data.Motor_Current, timeNow, "A")
+          timeoutCurrent = false;
+          mindsphere.triggerNotification($assetToken, "High Current", parseFloat(data.Motor_Current).toFixed(2).toString(), moment(timeNow).utcOffset(7).format("DD/MM/YYYY HH:mm:ss A"), "A");
+          setTimeout(() => timeoutCurrent = true, 60000);
+        }
+      }
+      if (data.Motor_Temperature > dataDashboard.Temperature.Setpoint) {
+        if (timeoutTemperature == true && dataDashboard.Temperature.Alarm == true) {
+          alarmCenterData.eventValueData("High Temperature", data.Motor_Temperature, timeNow, "ºC")
+          timeoutTemperature = false;
+          mindsphere.triggerNotification($assetToken, "High Temperature", parseFloat(data.Motor_Temperature).toFixed(2).toString(), moment(timeNow).utcOffset(7).format("DD/MM/YYYY HH:mm:ss A"), "ºC");
+          setTimeout(() => timeoutTemperature = true, 60000);
+        }
+      }
+      if (Math.abs(data.Motor_Vibration) > dataDashboard.Vibration.Setpoint) {
+        if (timeoutVibration == true && dataDashboard.Vibration.Alarm == true) {
+          alarmCenterData.eventValueData("High Vibration", data.Motor_Vibration, timeNow, "mm/s")
+          timeoutVibration = false;
+          mindsphere.triggerNotification($assetToken, "High Vibration", parseFloat(data.Motor_Vibration).toFixed(2).toString(), moment(timeNow).utcOffset(7).format("DD/MM/YYYY HH:mm:ss A"), "ºmm/s");
+          setTimeout(() => timeoutVibration = true, 60000);
+        }
+      }
+    }
+  }
+  if (data.type == 'status') {
+    io.emit('/resDashboard', data.value, 'statusMotor');
+  }
+  if (data.type == 'status_Led') {
+    io.emit('/resDashboard', data.value, 'status_Led');
+  }
+  if (data.type == 'setpointfeedback') {
+    let update = { $set: { 'Speed.Setpoint': data.value } }
+    if (dataDashboard != undefined) {
+      dataDashboard.Speed.Setpoint = data.value;
+    }
+    dashboard.updateValueData(update);
+  }
+  if (data.type == 'speed_AR') {
+    io.emit('/resDashboard', data.value, 'speed_AR');
+  }
+});
+// ------------------------ Schedule-Time -------------------------------------
+var schedule = require('node-schedule');
+
+dashboard.dashboardData.find({}, function (err, docs) {
+  if (!err) {
+    dataDashboard = docs[0];
+    Starttime = dataDashboard.Time_Schedule.Starttime
+    hourStarttime = parseInt(Starttime.substring(0, 2)) - 7;
+    if (hourStarttime < 0)
+      hourStarttime = hourStarttime + 24;
+    minuteStarttime = parseInt(Starttime.substring(3, 5));
+    Stoptime = dataDashboard.Time_Schedule.Stoptime
+    hourStoptime = parseInt(Stoptime.substring(0, 2)) - 7;
+    if (hourStoptime < 0)
+      hourStoptime = hourStoptime + 24;
+    minuteStoptime = parseInt(Stoptime.substring(3, 5));
+    scheduleValue = schedule.scheduleJob({ hour: hourStarttime, minute: minuteStarttime }, function () {
+      if (dataDashboard.Time_Schedule.Enable == true) {
+        var dayofWeek = moment().day();
+        var arrarySchedule = [dataDashboard.Time_Schedule.Sun,
+        dataDashboard.Time_Schedule.Mon,
+        dataDashboard.Time_Schedule.Tue,
+        dataDashboard.Time_Schedule.Wed,
+        dataDashboard.Time_Schedule.Thu,
+        dataDashboard.Time_Schedule.Fri,
+        dataDashboard.Time_Schedule.Sat]
+        if (arrarySchedule[dayofWeek] == true) {
+          client.publish('tritranhuuminhControl', JSON.stringify({ 'type': 'control', value: 'true' }));
+        }
+      }
+    });
+    scheduleValue = schedule.scheduleJob({ hour: hourStoptime, minute: minuteStoptime }, function () {
+      if (dataDashboard.Time_Schedule.Enable == true) {
+        var dayofWeek = moment().day();
+        var arrarySchedule = [dataDashboard.Time_Schedule.Sun,
+        dataDashboard.Time_Schedule.Mon,
+        dataDashboard.Time_Schedule.Tue,
+        dataDashboard.Time_Schedule.Wed,
+        dataDashboard.Time_Schedule.Thu,
+        dataDashboard.Time_Schedule.Fri,
+        dataDashboard.Time_Schedule.Sat]
+        if (arrarySchedule[dayofWeek] == true) {
+          client.publish('tritranhuuminhControl', JSON.stringify({ 'type': 'control', value: 'false' }));
+        }
+      }
+    });
+  }
+  else {
+    throw err;
+  }
+});
+
+
+var cronExpress = '*/1 * * * *';
+schedule.scheduleJob(cronExpress, function (fireDate) {
+  io.emit('/resDashboard', fireDate, 'clock');
+});
+

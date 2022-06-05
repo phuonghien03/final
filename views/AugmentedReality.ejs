@@ -1,0 +1,438 @@
+<!-- BEGIN: Top HTML -->
+<!DOCTYPE html>
+<!-- include aframe -->
+<script src="https://aframe.io/releases/0.9.2/aframe.min.js"></script>
+<!-- include ar.js -->
+<script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.7.2/aframe/build/aframe-ar.js"></script>
+
+<!-- to load .ply model -->
+<script src="https://rawgit.com/donmccurdy/aframe-extras/v6.0.0/dist/aframe-extras.loaders.min.js"></script>
+<script src="/javascripts/jquery-3.3.1.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+	var socket = io({ transports: ["websocket"] });
+	//------------------------------- Motor Speed Control -------------------------------
+	var controlMotor = 1;
+	$(document).ready(function () {
+		socket.emit('/reqDashboard', true, 'loadPageDashBoard');
+		var click1 = 1;
+		var click2 = 1;
+		var click3 = 1;
+		var click4 = 1;
+		var click5 = 1;
+		var click6 = 1;
+		var click7 = 1;
+		var click8 = 1;
+		$("#dq1").click(function (event) {
+			if (click1 == 1) {
+				socket.emit('/reqDashboard', { value: true, type: "control_Led1" }, 'control_Led');
+				click1 = 0;
+			}
+			else {
+				socket.emit('/reqDashboard', { value: false, type: "control_Led1" }, 'control_Led');
+				click1 = 1;
+			}
+		});
+		$("#dq2").click(function (event) {
+			if (click2 == 1) {
+				socket.emit('/reqDashboard', { value: true, type: "control_Led2" }, 'control_Led');
+				click2 = 0;
+			}
+			else {
+				socket.emit('/reqDashboard', { value: false, type: "control_Led2" }, 'control_Led');
+				click2 = 1;
+			}
+		});
+		$("#dq3").click(function (event) {
+			if (click3 == 1) {
+				socket.emit('/reqDashboard', { value: true, type: "control_Led3" }, 'control_Led');
+				click3 = 0;
+			}
+			else {
+				socket.emit('/reqDashboard', { value: false, type: "control_Led3" }, 'control_Led');
+				click3 = 1;
+			}
+		});
+		$("#dq4").click(function (event) {
+			if (click4 == 1) {
+				socket.emit('/reqDashboard', { value: true, type: "control_Led4" }, 'control_Led');
+				click4 = 0;
+			}
+			else {
+				socket.emit('/reqDashboard', { value: false, type: "control_Led4" }, 'control_Led');
+				click4 = 1;
+			}
+		});
+		$("#dq5").click(function (event) {
+			if (click5 == 1) {
+				socket.emit('/reqDashboard', { value: true, type: "control_Led5" }, 'control_Led');
+				click5 = 0;
+			}
+			else {
+				socket.emit('/reqDashboard', { value: false, type: "control_Led5" }, 'control_Led');
+				click5 = 1;
+			}
+		});
+		$("#dq6").click(function (event) {
+			if (click6 == 1) {
+				socket.emit('/reqDashboard', { value: true, type: "control_Led6" }, 'control_Led');
+				click6 = 0;
+			}
+			else {
+				socket.emit('/reqDashboard', { value: false, type: "control_Led6" }, 'control_Led');
+				click6 = 1;
+			}
+		});
+		$("#dq7").click(function (event) {
+			if (click7 == 1) {
+				socket.emit('/reqDashboard', { value: true, type: "control_Led7" }, 'control_Led');
+				click7 = 0;
+			}
+			else {
+				socket.emit('/reqDashboard', { value: false, type: "control_Led7" }, 'control_Led');
+				click7 = 1;
+			}
+		});
+		$("#dq8").click(function (event) {
+			if (click8 == 1) {
+				socket.emit('/reqDashboard', { value: true, type: "control_Led8" }, 'control_Led');
+				click8 = 0;
+			}
+			else {
+				socket.emit('/reqDashboard', { value: false, type: "control_Led8" }, 'control_Led');
+				click8 = 1;
+			}
+		});
+		socket.on('/resDashboard', function (data, type) {
+			switch (type) {
+				case 'loadPageDashBoard': {
+					let dataEnable = data.Speed.Enable;
+					let dataInputSetpoint = data.Speed.Setpoint;
+					$("#volumeSpeed").attr("value", dataInputSetpoint);
+					$("#ageOutputId").val(dataInputSetpoint);
+					//console.log(dataInputSetpoint);
+					break;
+				};
+				// case 'speed_AR': {
+				// 	let speedMotor = data.Motor_Speed;
+				// 	let Speed = document.querySelector("#Speed");
+				// 	Speed.setAttribute("value", parseInt(data * 1440 / 100) + " rpm");
+				// 	break;
+				// }
+				// Update led staus signal
+				case 'gaugeSpeed': {
+					let speedMotor = data.Motor_Speed;
+					console.log(speedMotor)
+					let Speed = document.querySelector("#Speed");
+					speedMotor = Math.ceil(speedMotor);
+					Speed.setAttribute("value", parseInt(speedMotor) + " rpm");
+					if (speedMotor > 0)
+						controlMotor = 0;
+					else
+						controlMotor = 1;
+					break;
+				}
+				// case 'statusMotor': {
+				// 	let statusSignal = data;
+				// 	let Status = document.querySelector("#Status");
+				// 	if (statusSignal == true) {
+				// 		Status.setAttribute("value", "Running");
+				// 		document.querySelector("#controlMotorbutton").setAttribute("src", "/images/Myimages/run.svg");
+				// 		controlMotor = 0;
+				// 	}
+				// 	else if (statusSignal == false) {
+				// 		Status.setAttribute("value", "Stop");
+				// 		document.querySelector("#controlMotorbutton").setAttribute("src", "/images/Myimages/stop.svg");
+				// 		controlMotor = 1;
+				// 	}
+				// 	break;
+				// }
+				// case 'status_Led': {
+				// 	if (data != null) {
+				// 		// console.log(data)
+				// 		if (data[0] == false) {
+				// 			document.querySelector("#dq1").setAttribute("src", "/images/Myimages/lightoff.svg");
+				// 			click1 = 1
+				// 		}
+				// 		else {
+				// 			document.querySelector("#dq1").setAttribute("src", "/images/Myimages/lighton.svg");
+				// 			click1 = 0
+				// 		}
+				// 		if (data[1] == false) {
+				// 			document.querySelector("#dq2").setAttribute("src", "/images/Myimages/lightoff.svg");
+				// 			click2 = 1
+				// 		}
+				// 		else {
+				// 			document.querySelector("#dq2").setAttribute("src", "/images/Myimages/lighton.svg");
+				// 			click2 = 0
+				// 		}
+				// 		if (data[2] == false) {
+				// 			document.querySelector("#dq3").setAttribute("src", "/images/Myimages/lightoff.svg");
+				// 			click3 = 1
+				// 		}
+				// 		else {
+				// 			document.querySelector("#dq3").setAttribute("src", "/images/Myimages/lighton.svg");
+				// 			click3 = 0
+				// 		}
+				// 		if (data[3] == false) {
+				// 			document.querySelector("#dq4").setAttribute("src", "/images/Myimages/lightoff.svg");
+				// 			click4 = 1
+				// 		}
+				// 		else {
+				// 			document.querySelector("#dq4").setAttribute("src", "/images/Myimages/lighton.svg");
+				// 			click4 = 0
+				// 		}
+				// 		if (data[4] == false) {
+				// 			document.querySelector("#dq5").setAttribute("src", "/images/Myimages/lightoff.svg");
+				// 			click5 = 1
+				// 		}
+				// 		else {
+				// 			document.querySelector("#dq5").setAttribute("src", "/images/Myimages/lighton.svg");
+				// 			click5 = 0
+				// 		}
+				// 		if (data[5] == false) {
+				// 			document.querySelector("#dq6").setAttribute("src", "/images/Myimages/lightoff.svg");
+				// 			click6 = 1
+				// 		}
+				// 		else {
+				// 			document.querySelector("#dq6").setAttribute("src", "/images/Myimages/lighton.svg");
+				// 			click6 = 0
+				// 		}
+				// 		if (data[6] == false) {
+				// 			document.querySelector("#dq7").setAttribute("src", "/images/Myimages/lightoff.svg");
+				// 			click7 = 1
+				// 		}
+				// 		else {
+				// 			document.querySelector("#dq7").setAttribute("src", "/images/Myimages/lighton.svg");
+				// 			click7 = 0
+				// 		}
+				// 		if (data[7] == false) {
+				// 			document.querySelector("#dq8").setAttribute("src", "/images/Myimages/lightoff.svg");
+				// 			click8 = 1
+				// 		}
+				// 		else {
+				// 			document.querySelector("#dq8").setAttribute("src", "/images/Myimages/lighton.svg");
+				// 			click8 = 0
+				// 		}
+				// 	}
+				// 	break;
+				// }
+			}
+		});
+	})
+</script>
+<!-- END: Top HTML -->
+<!-- BEGIN: Unity Compiled Events -->
+<script>
+	var markerFound = 0;
+	AFRAME.registerComponent('button', {
+		init: function () {
+
+			var elem = document.documentElement;
+			var markerMotor = document.querySelector("#markerMotor");
+			var controlMotorbutton = document.querySelector("#controlMotorbutton");
+			var markerLed = document.querySelector("#markerLed");
+			markerMotor.addEventListener("markerFound", function (evt) {
+				markerFound = 1;
+				$("#controlMotorbutton").show();
+				$("#ageOutputId").show();
+				$("#volumeSpeed").show();
+				$("#pdfExport").show();
+			});
+			markerMotor.addEventListener("markerLost", function (evt) {
+				markerFound = 0;
+				$("#controlMotorbutton").hide();
+				$("#ageOutputId").hide();
+				$("#volumeSpeed").hide();
+				$("#pdfExport").hide();
+			});
+			markerLed.addEventListener("markerFound", function (evt) {
+				markerFound = 1;
+				$("#dq1").show();
+				$("#dq2").show();
+				$("#dq3").show();
+				$("#dq4").show();
+				$("#dq5").show();
+				$("#dq6").show();
+				$("#dq7").show();
+				$("#dq8").show();
+			});
+			markerLed.addEventListener("markerLost", function (evt) {
+				markerFound = 0;
+				$("#dq1").hide();
+				$("#dq2").hide();
+				$("#dq3").hide();
+				$("#dq4").hide();
+				$("#dq5").hide();
+				$("#dq6").hide();
+				$("#dq7").hide();
+				$("#dq8").hide();
+			});
+			controlMotorbutton.addEventListener("click", function (evt) {
+				if (controlMotor == 0) {
+					socket.emit('/reqDashboard', 'true', 'motorStart');
+					controlMotor = 1;
+				} else {
+					socket.emit('/reqDashboard', 'false', 'motorStop');
+					controlMotor = 0;
+				}
+			});
+		},
+		tick: function (totalTime, deltaTime) {
+			var dTime = deltaTime / 1000;
+
+			if (markerFound == 1) {
+			}
+
+			function bezierEvaluate(p0, p1, p2, p3, t) {
+				var u = (1 - t);
+				var uu = u * u;
+				var uuu = u * u * u;
+				var tt = t * t;
+				var ttt = t * t * t;
+				//B(t) = (1-t)^3*P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3*P3 , 0 < t < 1
+				return (uuu * p0 + 3 * uu * t * p1 + 3 * u * tt * p2 + ttt * p3);
+
+			}
+			function bezierPath(p0, p1, p2, p3, t) {
+				return new THREE.Vector3(
+					bezierEvaluate(p0.x, p1.x, p2.x, p3.x, t),
+					bezierEvaluate(p0.y, p1.y, p2.y, p3.y, t),
+					bezierEvaluate(p0.z, p1.z, p2.z, p3.z, t)
+				);
+			}
+
+		}
+	});
+</script>
+<!-- END: Unity Compiled Events -->
+
+<!-- BEGIN: Middle HTML -->
+
+<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
+	<div style='position: absolute; bottom: 0; right:0; max-width:100%;z-index: 1;'>
+		<input type="image" id="controlMotorbutton" src="/images/Myimages/run.svg" style='width:100px; height: 100px'>
+		</input>
+	</div>
+	<div style='position: absolute; bottom: 42px; right: 110px; width: calc(100% - 115px);z-index: 1;'>
+		<output name="ageOutputName" id="ageOutputId"
+			style="font-size: 40px; color: #daf6ff;
+		text-shadow: 0 0 20px rgba(10, 175, 230, 1),  0 0 20px rgba(10, 175, 230, 0.8), 0 0 30px rgba(10, 175, 230, 0.6), 0 0 40px rgba(10, 175, 230, 0.4); margin-left: 5px;">?</output>
+		<input type="range" id="volumeSpeed" name="ageInputName" min="0" max="1500" style='width:100%'
+			onmouseup="callfunctionmouse()" ontouchend="callfunctiontouch()"
+			oninput="ageOutputId.value = volumeSpeed.value">
+	</div>
+	<div style='position: absolute; top: 0; right: 0; z-index: 1;'>
+		<input type="image" id="pdfExport" src="/images/Myimages/pdf.svg"
+			style='width:100px; height: 100px;opacity: 0.6;' onclick='window.location.href = "/report/:pdf";'>
+		</input>
+	</div>
+
+	<div style='position: absolute; top: 35%; right: 0%;width: 25%; z-index: 1;'>
+		<input type="image" id="dq1" src="/images/Myimages/lighton.svg" style='margin: auto;
+			display: block;width:100px; height: 100px'>
+		</input>
+	</div>
+	<div style='position: absolute; top: 35%; right: 25%;width: 25%; z-index: 1;'>
+		<input type="image" id="dq2" src="/images/Myimages/lighton.svg" style='margin: auto;
+			display: block;width:100px; height: 100px'>
+		</input>
+	</div>
+	<div style='position: absolute; top: 35%; right: 50%; width: 25%;z-index: 1;'>
+		<input type="image" id="dq3" src="/images/Myimages/lighton.svg" style='margin: auto;
+			display: block;width:100px; height: 100px'>
+		</input>
+	</div>
+	<div style='position: absolute; top: 35%; right: 75%;width: 25%; z-index: 1;'>
+		<input type="image" id="dq4" src="/images/Myimages/lighton.svg" style='margin: auto;
+			display: block;width:100px; height: 100px'>
+		</input>
+	</div>
+	<div style='position: absolute; top: 65%; right: 0%;width: 25%; z-index: 1;'>
+		<input type="image" id="dq5" src="/images/Myimages/lighton.svg" style='margin: auto;
+			display: block;width:100px; height: 100px'>
+		</input>
+	</div>
+	<div style='position: absolute; top: 65%; right: 25%;width: 25%; z-index: 1;'>
+		<input type="image" id="dq6" src="/images/Myimages/lighton.svg" style='margin: auto;
+			display: block;width:100px; height: 100px'>
+		</input>
+	</div>
+	<div style='position: absolute; top: 65%; right: 50%; width: 25%;z-index: 1;'>
+		<input type="image" id="dq7" src="/images/Myimages/lighton.svg" style='margin: auto;
+			display: block;width:100px; height: 100px'>
+		</input>
+	</div>
+	<div style='position: absolute; top: 65%; right: 75%;width: 25%; z-index: 1;'>
+		<input type="image" id="dq8" src="/images/Myimages/lighton.svg" style='margin: auto;
+			display: block;width:100px; height: 100px'>
+		</input>
+	</div>
+
+	<script>
+		$("#controlMotorbutton").hide();
+		$("#volumeSpeed").hide();
+		$("#ageOutputId").hide();
+		$("#pdfExport").hide();
+		$("#dq1").hide();
+		$("#dq2").hide();
+		$("#dq3").hide();
+		$("#dq4").hide();
+		$("#dq5").hide();
+		$("#dq6").hide();
+		$("#dq7").hide();
+		$("#dq8").hide();
+		function callfunctionmouse() {
+			var data = $("#volumeSpeed").val();
+			socket.emit('/reqDashboard', { value: data }, 'motorSetpoint');
+		}
+		function callfunctiontouch() {
+			var data = $("#volumeSpeed").val();
+			socket.emit('/reqDashboard', { value: data }, 'motorSetpoint');
+		}
+	</script>
+	<!-- <a-scene embedded arjs='debugUIEnabled: false; sourceType: video; sourceUrl:../../data/videos/headtracking.mp4;'> -->
+	<a-scene embedded arjs='debugUIEnabled: false; sourceType: webcam' vr-mode-ui='enabled: false'>
+		<a-entity id="mouseCursor" cursor="rayOrigin: mouse"
+			raycaster="objects: .intersectable; useWorldCoordinates: true;"></a-entity>
+		<!-- END: Middle HTML -->
+
+		<!-- BEGIN: Unity Compiled Assets -->
+		<a-assets>
+			<!-- <img id="logocompany" src="/images/Myimages/logo-estec.svg" alt="" />
+			<img id="buttonstart" src="/images/Myimages/run.svg" alt="" />
+			<img id="buttonstop" src="/images/Myimages/stop.svg" alt="" /> -->
+			<!-- <a-asset-item id="motor"
+				src="https://rawcdn.githack.com/tritranhuuminh/AR-model/25a630aca12313137e58bff8a669f6fc826ccaf3/electric_motor/scene.gltf"
+				crossorigin="anonymous" response-type="arraybuffer"></a-asset-item> -->
+		</a-assets>
+		<!-- END: Unity Compiled Assets -->
+		<!-- BEGIN: Add Image Target (marker) -->
+		<!-- <a-marker id="marker" preset="hiro" emitevents="true" button> -->
+		<a-marker id="markerMotor" preset='custom' type='pattern' url='images/pattern-motordemo.patt' emitevents="true"
+			button>
+			<!-- END: Add Image Target (marker) -->
+
+			<!-- BEGIN: Unity Compiled Objects -->
+			<!-- <a-box src="" id="Cube_0" class="intersectable" width="0.5" height="0.5" depth="0.5"
+				position="0.166 0.899 -0.093" rotation="0 0 0" color="#FFFFFF" transparent=False></a-box> -->
+			<!-- <a-image src="#logocompany" id="image" class="intersectable" position="0 0.95 0" rotation="-90 0 0"
+				transparent=False></a-image> -->
+			<!-- <a-entity position="0 1 -1" scale="1 1 1" gltf-model="#motor" rotation="270 0 0">
+			</a-entity> -->
+			<!-- <a-text value="Status" color="#A21A24" font-size="40" position="-1 1 1" rotation="-90 0 0">
+			</a-text>
+			<a-text id="Status" value="?" color="#A21A24" font-size="40" position="0.5 1 1" rotation="-90 0 0">
+			</a-text> -->
+			<a-text value="Speed" color="#00FFFF" font-size="40" position="-1 1 0.5" rotation="-90 0 0">
+			</a-text>
+			<a-text id="Speed" value="?" color="#00FFFF" font-size="40" position="0.5 1 0.5" rotation="-90 0 0">
+			</a-text>
+		</a-marker>
+		<a-marker id="markerLed" preset='hiro' emitevents="true" button>
+		</a-marker>
+		<a-entity camera></a-entity>
+	</a-scene>
+</body>
+
+</html><!-- END: Bottom HTML -->

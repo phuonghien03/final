@@ -1,0 +1,31 @@
+#clock {
+    font-family: 'Share Tech Mono', monospace;
+    color: #ffffff;
+	position: absolute;
+  	right: 5%;
+	margin-left: 10%;
+	font-size: 180%;
+	color: #fff;
+    text-shadow: 0 0 10px #39ff14;
+}
+.timeRunning{
+    font-family: 'Share Tech Mono', monospace;
+    color: #ffffff;
+	position: absolute;
+  	left: 5%;
+	margin-right: 10%;
+	font-size: 180%;	
+	color: #fff;
+    text-shadow: 0 0 10px #39ff14;
+}
+.timeShecdule{
+    font-family: 'Share Tech Mono', monospace;
+    color: #ffffff;
+	position: absolute;
+  	left: 5%;
+	margin-top: 50px;
+	margin-right: 10%;
+	font-size: 180%;	
+	color: #fff;
+    text-shadow: 0 0 10px #39ff14;
+}
